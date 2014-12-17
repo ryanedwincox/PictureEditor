@@ -11,10 +11,19 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = PictureEditor
 TEMPLATE = app
 
+LIBS += -lOpenCL
+LIBS += `pkg-config opencv --libs`
+
+INCLUDEPATH += '/usr/local/cuda-6.5/include'
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp\
+        filter.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h\
+        filter.h
 
-FORMS    += mainwindow.ui
+OTHER_FILES += cl\copy_image.cl\
+        cl\low_pass.cl
+
+

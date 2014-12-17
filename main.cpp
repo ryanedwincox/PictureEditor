@@ -10,8 +10,5 @@ int main(int argc, char *argv[])
     //mainwindow->setWindowIcon(QIcon(QPixmap("icon.png")));
     mainwindow->show();
 
-//    MainWindow w;
-//    w.show();
-
     app.exec();
 }
