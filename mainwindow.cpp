@@ -6,34 +6,67 @@ MainWindow::MainWindow(QWidget *parent) :
     window = new QWidget(this);
     this->setCentralWidget(window);
 
-    QPushButton *copy = new QPushButton("Copy");
-    QPushButton *blur = new QPushButton("Blur");
+    // Create buttons
+    copy = new QPushButton("Copy");
+    blur = new QPushButton("Blur");
 
-    QVBoxLayout *buttonLayoutV = new QVBoxLayout();
+    // Connect button signal to appropriate slot
+    connect(copy, SIGNAL(clicked()), this, SLOT(copySlot()));
+    connect(blur, SIGNAL(clicked()), this, SLOT(blurSlot()));
+
+    // Create button layout
+    buttonLayoutV = new QVBoxLayout();
     buttonLayoutV->addWidget(copy);
     buttonLayoutV->addWidget(blur);
 
-    QPixmap img;
-    img.load("/home/bluhaptics1/Documents/PictureEditor/images/Lenna.png");
+    filterInit();
 
-    QLabel *imgLabel = new QLabel;
+    // Create image
+    QImage im(newDataPointer, imageWidth, imageHeight, QImage::Format_RGB888);
+    QPixmap img = QPixmap::fromImage(im);
+
+    imgLabel = new QLabel;
     imgLabel->setPixmap(img);
 
-    QHBoxLayout *mainLayoutH = new QHBoxLayout();
+    mainLayoutH = new QHBoxLayout();
     mainLayoutH->addLayout(buttonLayoutV);
     mainLayoutH->addWidget(imgLabel);
 
     window->setLayout(mainLayoutH);
 }
 
-void MainWindow::copy()
+void MainWindow::copySlot()
 {
+    std::cout << "Copy!" << std::endl;
+    f1.buildProgram(copyImageClPath, 0);
+    f1.setImage(newImage);
+    f1.runProgram();
+    // newDataPointer is used to display image in gui
+    newDataPointer = (unsigned char*) f1.readOutput();
+    // newImage is passed into the next filter
+    newImage = cv::Mat(cv::Size(imageWidth,imageHeight), CV_8UC3, newDataPointer);
 
+    // update image
+    QImage im(newDataPointer, imageWidth, imageHeight, QImage::Format_RGB888);
+    QPixmap img = QPixmap::fromImage(im);
+    imgLabel->setPixmap(img);
 }
 
-void MainWindow::blur()
+void MainWindow::blurSlot()
 {
+    std::cout << "Blur!" << std::endl;
+    f1.buildProgram(lowPassClPath, lpfMaskSize);
+    f1.setImage(newImage);
+    f1.runProgram();
+    // newDataPointer is used to display image in gui
+    newDataPointer = (unsigned char*) f1.readOutput();
+    // newImage is passed into the next filter
+    newImage = cv::Mat(cv::Size(imageWidth,imageHeight), CV_8UC3, newDataPointer);
 
+    // update image
+    QImage im(newDataPointer, imageWidth, imageHeight, QImage::Format_RGB888);
+    QPixmap img = QPixmap::fromImage(im);
+    imgLabel->setPixmap(img);
 }
 
 int MainWindow::filterInit()
@@ -41,27 +74,52 @@ int MainWindow::filterInit()
     // Load image
     image = cv::imread("/home/bluhaptics1/Documents/ImageManipulator/images/Lenna.png", CV_LOAD_IMAGE_COLOR);
 
+    // converts image to RGB which qt understands from openCVs default BGR
+    cvtColor(image, image, CV_BGR2RGB);
+
     // Check for invalid input
     if(! image.data )
     {
         std::cout <<  "Could not open or find the image" << std::endl;
         return -1;
     }
+    else
+    {
+        std::cout << "Image loaded" << std::endl;
+    }
 
-    size_t imageWidth = image.cols;
-    size_t imageHeight = image.rows;
+    imageWidth = image.cols;
+    imageHeight = image.rows;
+    std::cout << "image width: " << imageWidth << " image height: " << imageHeight << std::endl;
 
-    // Will store filter results
-    unsigned char* newDataPointer;
+    copyImageClPath = "/home/bluhaptics1/Documents/ImageManipulator/cl/copy_image.cl";
+    lowPassClPath = "/home/bluhaptics1/Documents/ImageManipulator/cl/low_pass.cl";
+    lpfMaskSize = 5;
 
-    const char* copyImageClPath = "/home/bluhaptics1/Documents/ImageManipulator/cl/copy_image.cl";
-    const char* lowPassClPath = "/home/bluhaptics1/Documents/ImageManipulator/cl/low_pass.cl";
-    cl_int lpfMaskSize = 5;
+    // emit the copy signal to start with a normal image and set newImage
+    //emit SIGNAL(clicked());
 
-    // Create filter object
-    filter f1;
+    f1.buildProgram(copyImageClPath, 0);
+    f1.setImage(image);
+    f1.runProgram();
+    // newDataPointer is used to display image in gui
+    newDataPointer = (unsigned char*) f1.readOutput();
+    // newImage is passed into the next filter
+    newImage = cv::Mat(cv::Size(imageWidth,imageHeight), CV_8UC3, newDataPointer);
+
+//    // Display images
+//    std::cout << "Display images" << std::endl;
+
+//    cv::namedWindow("Original Image", cv::WINDOW_AUTOSIZE); // Create a window for display.
+//    cv::imshow("Original Image", f1.getInputImage());           // Show our image inside it.
+
+//    cv::namedWindow("Blured Image", cv::WINDOW_AUTOSIZE); // Create a window for display.
+//    cv::imshow("Blured Image", newImage);                 // Show our image inside it.
+
+    return 1;
 }
 
 MainWindow::~MainWindow()
 {
 }
+
