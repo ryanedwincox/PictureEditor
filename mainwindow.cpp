@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setCentralWidget(window);
 
     // Create buttons
-    copy = new QPushButton("Copy");
+    copy = new QPushButton("Reset");
     blur = new QPushButton("Blur");
 
     // Create button layout
