@@ -18,10 +18,12 @@ INCLUDEPATH += '/usr/local/cuda-6.5/include'
 
 SOURCES += main.cpp\
         mainwindow.cpp\
-        filter.cpp
+        filter.cpp \
+    filterthread.cpp
 
 HEADERS  += mainwindow.h\
-        filter.h
+        filter.h \
+    filterthread.h
 
 OTHER_FILES += cl\copy_image.cl\
         cl\low_pass.cl
