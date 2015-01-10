@@ -1,14 +1,13 @@
 #include "filterthread.h"
 
-FilterThread::FilterThread(QLabel* imageLabel)
+FilterThread::FilterThread()
 {
-    imgLabel = imageLabel;
 }
 
 void FilterThread::filterInit()
 {
     // Load image
-    image = cv::imread("/home/bluhaptics1/Documents/ImageManipulator/images/Lenna.png", CV_LOAD_IMAGE_COLOR);
+    image = cv::imread("/home/pierre/Documents/PictureEditor/images/Lenna.png", CV_LOAD_IMAGE_COLOR);
 
     // converts image to RGB which qt understands from openCVs default BGR
     cvtColor(image, image, CV_BGR2RGB);
@@ -27,13 +26,16 @@ void FilterThread::filterInit()
     imageHeight = image.rows;
     std::cout << "image width: " << imageWidth << " image height: " << imageHeight << std::endl;
 
-    copyImageClPath = "/home/bluhaptics1/Documents/ImageManipulator/cl/copy_image.cl";
-    lowPassClPath = "/home/bluhaptics1/Documents/ImageManipulator/cl/low_pass.cl";
+    copyImageClPath = "/home/pierre/Documents/PictureEditor/cl/copy_image.cl";
+    lowPassClPath = "/home/peirre/Documents/PictureEditor/cl/low_pass.cl";
     lpfMaskSize = 5;
 
     // emit the copy signal to start with a normal image and set newImage
     connect(this, SIGNAL(start()), this, SLOT(copySlot()));
     emit start();
+
+//    // connect update image signal
+//    connect(this, SIGNAL(updateImageSignal(unsigned char*,size_t,size_t)), MainWindow, SLOT(updateImage(unsigned char*,size_t,size_t)));
 
 //    // Display images using OpenCV
 //    std::cout << "Display images" << std::endl;
@@ -56,11 +58,12 @@ void FilterThread::copySlot()
     newDataPointer = (unsigned char*) f1.readOutput();
     // newImage is passed into the next filter
     newImage = cv::Mat(cv::Size(imageWidth,imageHeight), CV_8UC3, newDataPointer);
+    emit updateImageSignal(newDataPointer, imageWidth, imageHeight);
 
-    // update image
-    QImage im(newDataPointer, imageWidth, imageHeight, QImage::Format_RGB888);
-    QPixmap img = QPixmap::fromImage(im);
-    imgLabel->setPixmap(img);
+//    // update image
+//    QImage im(newDataPointer, imageWidth, imageHeight, QImage::Format_RGB888);
+//    QPixmap img = QPixmap::fromImage(im);
+//    imgLabel->setPixmap(img);
 }
 
 // Blurs image
@@ -73,11 +76,12 @@ void FilterThread::blurSlot()
     newDataPointer = (unsigned char*) f1.readOutput();
     // newImage is passed into the next filter
     newImage = cv::Mat(cv::Size(imageWidth,imageHeight), CV_8UC3, newDataPointer);
+    emit updateImageSignal(newDataPointer, imageWidth, imageHeight);
 
-    // update image
-    QImage im(newDataPointer, imageWidth, imageHeight, QImage::Format_RGB888);
-    QPixmap img = QPixmap::fromImage(im);
-    imgLabel->setPixmap(img);
+//    // update image
+//    QImage im(newDataPointer, imageWidth, imageHeight, QImage::Format_RGB888);
+//    QPixmap img = QPixmap::fromImage(im);
+//    imgLabel->setPixmap(img);
 }
 
 FilterThread::~FilterThread()

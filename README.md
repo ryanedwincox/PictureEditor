@@ -10,4 +10,4 @@ The OpenCL framework allows for low level access to the GPU which can be used to
 
 The graphical user interface implemented in QT allows the user to manipulate images.  The program currently supports a low pass filter and resetting the original image.  The processing has been moved to a separate thread so the user interface does not have to wait for the processing to finish.
 
-
+Note: Be sure to update absolute paths to images and cl files in filterThread.cpp

@@ -40,6 +40,9 @@ signals:
     void copySignal();
     void blurSignal();
 
+public slots:
+    void updateImageSlot(unsigned char* newDataPointer, int imageWidth, int imageHeight);
+
 };
 
 #endif // MAINWINDOW_H

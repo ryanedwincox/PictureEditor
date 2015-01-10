@@ -29,19 +29,31 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Start image processing thread
     processThread = new QThread;
-    FilterThread* worker = new FilterThread(imgLabel);
+    FilterThread* worker = new FilterThread();
     worker->moveToThread(processThread);
     // Connect init signal
     connect(processThread, SIGNAL(started()), worker, SLOT(filterInit()));
     // Connect button signal to appropriate slot
     connect(copy, SIGNAL(clicked()), worker, SLOT(copySlot()));
     connect(blur, SIGNAL(clicked()), worker, SLOT(blurSlot()));
+
+    // connect update image signal
+    connect(worker, SIGNAL(updateImageSignal(unsigned char*, int, int)), this, SLOT(updateImageSlot(unsigned char*, int, int)));
+
 //    // Connect finish signal to close down thread
 //    connect(worker, SIGNAL(finished()), processThread, SLOT(quit()));
 //    connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
 //    connect(processThread, SIGNAL(finished()), processThread, SLOT(deleteLater()));
     processThread->start();
 
+}
+
+void MainWindow::updateImageSlot(unsigned char* newDataPointer, int imageWidth, int imageHeight)
+{
+    // update image
+    QImage im(newDataPointer, imageWidth, imageHeight, QImage::Format_RGB888);
+    QPixmap img = QPixmap::fromImage(im);
+    imgLabel->setPixmap(img);
 }
 
 MainWindow::~MainWindow()

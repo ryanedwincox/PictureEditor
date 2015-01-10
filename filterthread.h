@@ -13,7 +13,7 @@ class FilterThread : public QObject
     QThread processThread;
 
 public:
-    FilterThread(QLabel*);
+    FilterThread();
     ~FilterThread();
 
 public slots:
@@ -23,19 +23,19 @@ public slots:
 
 signals:
     void start();
+    void updateImageSignal(unsigned char* newDataPointer, int imageWidth, int imageHeight);
 
 private:
     // OpenCL variables
     cv::Mat image;
     cv::Mat newImage;
-    size_t imageWidth;
-    size_t imageHeight;
+    int imageWidth;
+    int imageHeight;
     const char* copyImageClPath;
     const char* lowPassClPath;
     unsigned char* newDataPointer;
     cl_int lpfMaskSize;
     filter f1;
-    QLabel *imgLabel;
 
 };
 

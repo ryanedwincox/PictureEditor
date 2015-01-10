@@ -14,16 +14,17 @@ TEMPLATE = app
 LIBS += -lOpenCL
 LIBS += `pkg-config opencv --libs`
 
-INCLUDEPATH += '/usr/local/cuda-6.5/include'
+INCLUDEPATH += '/usr/local/cuda-6.5/include'\
+        '/opt/AMDAPP/include'
 
 SOURCES += main.cpp\
         mainwindow.cpp\
         filter.cpp \
-    filterthread.cpp
+        filterthread.cpp
 
 HEADERS  += mainwindow.h\
         filter.h \
-    filterthread.h
+        filterthread.h
 
 OTHER_FILES += cl\copy_image.cl\
         cl\low_pass.cl
