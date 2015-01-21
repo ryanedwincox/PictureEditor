@@ -73,6 +73,10 @@ void filter::buildProgram(const char* clPath, cl_int maskSize)
     // get size of kernel source
     const char* kernelSource = clPath;
     programHandle = fopen(kernelSource, "r");
+    if (programHandle == NULL)
+    {
+        cout << "Kernel source not found" << endl;
+    }
     fseek(programHandle, 0, SEEK_END);
     programSize = ftell(programHandle);
     rewind(programHandle);

@@ -27,7 +27,7 @@ void FilterThread::filterInit()
     std::cout << "image width: " << imageWidth << " image height: " << imageHeight << std::endl;
 
     copyImageClPath = "/home/pierre/Documents/PictureEditor/cl/copy_image.cl";
-    lowPassClPath = "/home/peirre/Documents/PictureEditor/cl/low_pass.cl";
+    lowPassClPath = "/home/pierre/Documents/PictureEditor/cl/low_pass.cl";
     lpfMaskSize = 5;
 
     // emit the copy signal to start with a normal image and set newImage
@@ -51,13 +51,14 @@ void FilterThread::filterInit()
 // Resets to the original image
 void FilterThread::copySlot()
 {
+    std::cout << "copySlot" << std::endl;
     f1.buildProgram(copyImageClPath, 0);
     f1.setImage(image);
     f1.runProgram();
     // newDataPointer is used to display image in gui
     newDataPointer = (unsigned char*) f1.readOutput();
     // newImage is passed into the next filter
-    newImage = cv::Mat(cv::Size(imageWidth,imageHeight), CV_8UC3, newDataPointer);
+    //newImage = cv::Mat(cv::Size(imageWidth,imageHeight), CV_8UC3, newDataPointer);
     emit updateImageSignal(newDataPointer, imageWidth, imageHeight);
 
 //    // update image
@@ -69,13 +70,14 @@ void FilterThread::copySlot()
 // Blurs image
 void FilterThread::blurSlot()
 {
+    std::cout << "blurSlot" << std::endl;
     f1.buildProgram(lowPassClPath, lpfMaskSize);
     f1.setImage(newImage);
     f1.runProgram();
     // newDataPointer is used to display image in gui
     newDataPointer = (unsigned char*) f1.readOutput();
     // newImage is passed into the next filter
-    newImage = cv::Mat(cv::Size(imageWidth,imageHeight), CV_8UC3, newDataPointer);
+    //newImage = cv::Mat(cv::Size(imageWidth,imageHeight), CV_8UC3, newDataPointer);
     emit updateImageSignal(newDataPointer, imageWidth, imageHeight);
 
 //    // update image
