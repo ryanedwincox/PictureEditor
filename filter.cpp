@@ -134,7 +134,7 @@ void filter::setImage(cv::Mat img)
                              NULL,
                              &err);
     cout << "clImage Buffer error: " << err << "\n";
-
+    //CL_SUCCESS
     // Create an OpenCL buffer for the result
     clResult = clCreateBuffer(context,
                               CL_MEM_WRITE_ONLY,
