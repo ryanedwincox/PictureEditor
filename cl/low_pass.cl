@@ -49,7 +49,7 @@ __kernel void filter_kernel(
         P[imgPosLocal+1 + BLOCK_SIZE*3] = image[imgPosGlobal+1 - buffOffset + BLOCK_SIZE*3];
         P[imgPosLocal+2 + BLOCK_SIZE*3] = image[imgPosGlobal+2 - buffOffset + BLOCK_SIZE*3];
     }
-    // Copies borders of the bottom
+    // Copies borders on the bottom
     if (iDy < maskSize)
     {
         // TODO: edge cases
@@ -88,5 +88,15 @@ __kernel void filter_kernel(
     blurredImage[imgPosGlobal+0 - buffOffset + 9] = sum0;
     blurredImage[imgPosGlobal+1 - buffOffset + 9] = sum1;
     blurredImage[imgPosGlobal+2 - buffOffset + 9] = sum2;
+    //blurredImage[imgPosGlobal+0 - buffOffset + 0] = 200;
+    //blurredImage[imgPosGlobal+1 - buffOffset + 0] = 200;
+    //blurredImage[imgPosGlobal+2 - buffOffset + 0] = 200;
+    int lastRow = imageWidth*imageHeight*3 - imageWidth*3;
+    for (int i = 0; i<imageWidth; i++)
+    {
+        blurredImage[lastRow + i*3 + 0] = 0;
+	blurredImage[lastRow + i*3 + 1] = 255;
+	blurredImage[lastRow + i*3 + 2] = 0;
+    }
 }
 

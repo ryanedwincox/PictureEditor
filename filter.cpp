@@ -130,7 +130,7 @@ void filter::setImage(cv::Mat img)
     // Create an OpenCL buffer for the image
     clImage = clCreateBuffer(context,
                              CL_MEM_READ_ONLY,
-                             imageSize * 3,
+                             imageSize * 3 * sizeof(char),
                              NULL,
                              &err);
     cout << "clImage Buffer error: " << err << "\n";
@@ -138,7 +138,7 @@ void filter::setImage(cv::Mat img)
     // Create an OpenCL buffer for the result
     clResult = clCreateBuffer(context,
                               CL_MEM_WRITE_ONLY,
-                              imageSize * 3,
+                              imageSize * 4 * sizeof(char),
                               NULL,
                               &err);
     cout << "clResult Buffer error: " << err << "\n";
@@ -156,7 +156,7 @@ void filter::setImage(cv::Mat img)
                                clImage,
                                CL_TRUE,
                                0,
-                               imageSize * 3,
+                               imageSize * 3 * sizeof(char),
                                (void*) &image.data[0],
                                0,
                                NULL,
@@ -214,14 +214,14 @@ void filter::runProgram()
 void* filter::readOutput() {
     std::cout << "readOutput" << std::endl;
 
-    unsigned char newData [imageSize * 3];
+    unsigned char newData [imageSize * 4 * sizeof(char)];
 
     // Transfer image back to host
     err = clEnqueueReadBuffer(queue,
                               clResult,
                               CL_TRUE,
                               0,
-                              imageSize * 3,
+                              imageSize * 4 * sizeof(char),
                               (void*) newData,
                               0,
                               NULL,

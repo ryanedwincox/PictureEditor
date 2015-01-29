@@ -26,7 +26,7 @@ HEADERS  += mainwindow.h\
         filter.h \
         filterthread.h
 
-OTHER_FILES += cl\copy_image.cl\
-        cl\low_pass.cl
+OTHER_FILES += cl/copy_image.cl\
+        cl/low_pass.cl
 
 
