@@ -1,9 +1,10 @@
 // TODO convert to float4 to use GPU vector arithimitic optimization
 // TODO make static parameters constant
+// maskSize must be odd
 #define BLOCK_SIZE 16  // size of local workspace
 __kernel void filter_kernel(
-        __global uchar * image, //bgr
-        __global uchar * blurredImage, //bgr
+        __global uchar4 * image, //bgr
+        __global uchar4 * blurredImage, //bgr
         int imageWidth,
         int imageHeight,
         int maskSize,
@@ -12,8 +13,9 @@ __kernel void filter_kernel(
 
     int r = maskSize / 2;
 
-    // storing image data locally
-    __local uchar P[3*(BLOCK_SIZE+4)*3*(BLOCK_SIZE+4)];
+    // storing image data locally\
+    // TODO pass in this memory as a paramter to allow for variable sizing
+    __local uchar4 P[(BLOCK_SIZE+2*2)*(BLOCK_SIZE+2*2)];  // cannot be variable values
 
     // Identify workgroup
     int i = get_group_id(0);
@@ -30,73 +32,57 @@ __kernel void filter_kernel(
     int jj = j*BLOCK_SIZE + iDy;  // == get_global_id(1)
 
     // Calculate local and global indexes
-    int imgPosGlobal = (jj * imageWidth + ii) * 3;
-    int imgPosLocal = (iDy * (BLOCK_SIZE+2*r) + iDx) * 3;
+    int imgPosGlobal = (jj * imageWidth + ii);
+    int imgPosLocal = (iDy * (BLOCK_SIZE+2*r) + iDx);
 
     // moves the local workspace from the center of the roi to the upper left corner of the roi
-    int buffOffset = (2*BLOCK_SIZE+5*r)*3;
+//    int buffOffset = (BLOCK_SIZE*r+maskSize*r);
+    int buffOffset = (BLOCK_SIZE*r+r);
 
     // Read pixels in workspace
-    P[imgPosLocal+0] = image[imgPosGlobal+0 - buffOffset];
-    P[imgPosLocal+1] = image[imgPosGlobal+1 - buffOffset];
-    P[imgPosLocal+2] = image[imgPosGlobal+2 - buffOffset];
+    P[imgPosLocal] = image[imgPosGlobal - buffOffset];
 
     // Copies borders on the right side
     if (iDx < maskSize)  // for maskSize of 5 this is less than 4
     {
-        // TODO: edge cases
-        P[imgPosLocal+0 + BLOCK_SIZE*3] = image[imgPosGlobal+0 - buffOffset + BLOCK_SIZE*3];
-        P[imgPosLocal+1 + BLOCK_SIZE*3] = image[imgPosGlobal+1 - buffOffset + BLOCK_SIZE*3];
-        P[imgPosLocal+2 + BLOCK_SIZE*3] = image[imgPosGlobal+2 - buffOffset + BLOCK_SIZE*3];
+        // TODO: edge cases which grab black pixels around the edges
+        P[imgPosLocal + BLOCK_SIZE] = image[imgPosGlobal - buffOffset + BLOCK_SIZE];
     }
     // Copies borders on the bottom
     if (iDy < maskSize)
     {
         // TODO: edge cases
-        P[imgPosLocal+0 + (BLOCK_SIZE+2*r)*BLOCK_SIZE*3] = image[imgPosGlobal+0 - buffOffset + BLOCK_SIZE*imageWidth*3];
-        P[imgPosLocal+1 + (BLOCK_SIZE+2*r)*BLOCK_SIZE*3] = image[imgPosGlobal+1 - buffOffset + BLOCK_SIZE*imageWidth*3];
-        P[imgPosLocal+2 + (BLOCK_SIZE+2*r)*BLOCK_SIZE*3] = image[imgPosGlobal+2 - buffOffset + BLOCK_SIZE*imageWidth*3];
+        P[imgPosLocal + (BLOCK_SIZE+2*r)*BLOCK_SIZE] = image[imgPosGlobal - buffOffset + BLOCK_SIZE*imageWidth];
     }
     // Copies bottom right corner
     if (iDx > BLOCK_SIZE - maskSize && iDy > BLOCK_SIZE - maskSize)
     {
-        P[imgPosLocal+0 + (r*2 + (BLOCK_SIZE+r*2)*r*2)*3] = image[imgPosGlobal+0 - buffOffset + (r*2 + imageWidth*r*2)*3];
-        P[imgPosLocal+1 + (r*2 + (BLOCK_SIZE+r*2)*r*2)*3] = image[imgPosGlobal+1 - buffOffset + (r*2 + imageWidth*r*2)*3];
-        P[imgPosLocal+2 + (r*2 + (BLOCK_SIZE+r*2)*r*2)*3] = image[imgPosGlobal+2 - buffOffset + (r*2 + imageWidth*r*2)*3];
+        P[imgPosLocal + (r*2 + (BLOCK_SIZE+r*2)*r*2)] = image[imgPosGlobal - buffOffset + (r*2 + imageWidth*r*2)];
     }
 
     // Make sure all threads have finished loading all pixels
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    // copies image for testing, not need for convolution
-    //blurredImage[imgPosGlobal+0 - buffOffset + 3] = P[imgPosLocal+0 + 3];
-    //blurredImage[imgPosGlobal+1 - buffOffset + 3] = P[imgPosLocal+1 + 3];
-    //blurredImage[imgPosGlobal+2 - buffOffset + 3] = P[imgPosLocal+2 + 3];
+//    // copies image for testing, not need for convolution
+    blurredImage[imgPosGlobal - buffOffset] = P[imgPosLocal];
 
-    // Perform convolution
-    uchar sum0 = 0;
-    uchar sum1 = 0;
-    uchar sum2 = 0;
+//    // Perform convolution
+//    uchar sum0 = 0;
+//    uchar sum1 = 0;
+//    uchar sum2 = 0;
+//    uchar sum3 = 0;
 
-    for (int i = -r; i <= r; i++) {
-        for (int j = -r; j <= r; j++) {
-            sum0 = sum0 + P[imgPosLocal+0 + buffOffset + 3 + ((BLOCK_SIZE+r*2) * j + i)*3] / (maskSize * maskSize);
-            sum1 = sum1 + P[imgPosLocal+1 + buffOffset + 3 + ((BLOCK_SIZE+r*2) * j + i)*3] / (maskSize * maskSize);
-            sum2 = sum2 + P[imgPosLocal+2 + buffOffset + 3 + ((BLOCK_SIZE+r*2) * j + i)*3] / (maskSize * maskSize);
-        }
-    }
-    blurredImage[imgPosGlobal+0 - buffOffset + 9] = sum0;
-    blurredImage[imgPosGlobal+1 - buffOffset + 9] = sum1;
-    blurredImage[imgPosGlobal+2 - buffOffset + 9] = sum2;
-    //blurredImage[imgPosGlobal+0 - buffOffset + 0] = 200;
-    //blurredImage[imgPosGlobal+1 - buffOffset + 0] = 200;
-    //blurredImage[imgPosGlobal+2 - buffOffset + 0] = 200;
-    int lastRow = imageWidth*imageHeight*3 - imageWidth*3;
-    for (int i = 0; i<imageWidth; i++)
-    {
-        blurredImage[lastRow + i*3 + 0] = 0;
-	blurredImage[lastRow + i*3 + 1] = 255;
-	blurredImage[lastRow + i*3 + 2] = 0;
-    }
+//    for (int i = -r; i <= r; i++) {
+//        for (int j = -r; j <= r; j++) {
+//            sum0 = sum0 + P[imgPosLocal + buffOffset + 3 + ((BLOCK_SIZE+r*2) * j + i)].x / (maskSize * maskSize);
+//            sum1 = sum1 + P[imgPosLocal + buffOffset + 3 + ((BLOCK_SIZE+r*2) * j + i)].y / (maskSize * maskSize);
+//            sum2 = sum2 + P[imgPosLocal + buffOffset + 3 + ((BLOCK_SIZE+r*2) * j + i)].z / (maskSize * maskSize);
+//            sum2 = sum2 + P[imgPosLocal + buffOffset + 3 + ((BLOCK_SIZE+r*2) * j + i)].w / (maskSize * maskSize);
+//        }
+//    }
+//    blurredImage[imgPosGlobal - buffOffset].x = sum0;
+//    blurredImage[imgPosGlobal - buffOffset].y = sum1;
+//    blurredImage[imgPosGlobal - buffOffset].z = sum2;
+//    blurredImage[imgPosGlobal - buffOffset].w = sum3;
 }
 
